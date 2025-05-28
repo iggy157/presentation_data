@@ -1,0 +1,534 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BDI Agents in Natural Language Environments (NatBDI)</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+  body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: #222;
+  overflow: hidden;
+  line-height: 1.65;
+}
+
+.slide {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fbfc 100%);
+  box-shadow:
+    0 10px 20px rgba(0,0,0,0.12),
+    0 6px 6px rgba(0,0,0,0.08);
+  padding: 70px 80px;
+  border-radius: 16px;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  overflow-y: auto;
+}
+
+.slide.active {
+  display: block;
+  animation: slideInFade 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+
+@keyframes slideInFade {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide h1 {
+  font-weight: 900;
+  font-size: 2.5rem;
+  margin-bottom: 35px;
+  color: #1e3c72;
+  text-align: center;
+  border-bottom: 4px solid #2a5298;
+  padding-bottom: 18px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+  letter-spacing: 0.03em;
+}
+
+.slide p, .slide li {
+  font-size: 1.15rem;
+  margin-bottom: 18px;
+  color: #222;
+  line-height: 1.7;
+  transition: color 0.3s ease;
+}
+
+.highlight {
+  background: linear-gradient(120deg, #9ae6b4 0%, #7bd98f 100%);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(123,217,143,0.4);
+  color: #145214;
+}
+
+.navigation {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  gap: 20px;
+  z-index: 1000;
+}
+
+.nav-btn {
+  background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.nav-btn:hover:not(:disabled) {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.nav-btn:focus-visible {
+  outline: 3px solid #88d8a3;
+  outline-offset: 3px;
+}
+
+.slide-counter {
+  position: fixed;
+  bottom: 30px;
+  left: 30px;
+  background: rgba(30, 60, 114, 0.95);
+  color: white;
+  padding: 12px 26px;
+  border-radius: 24px;
+  font-weight: 900;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  user-select: none;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+
+/* liを包むulに対して背景と角丸をつける */
+.slide ul {
+  background-color: rgba(173, 216, 230, 0.5); /* 薄い水色＋透明度50% */
+  border-radius: 12px;
+  padding: 20px 30px;
+  margin-left: 0;  /* 左マージンは解除してボックス内で揃える */
+  margin-bottom: 25px;
+  list-style-position: inside; /* 目盛りを内側に */
+  box-sizing: border-box;
+}
+
+/* li要素のマージン調整 */
+.slide li {
+  margin-bottom: 12px;
+  font-size: 1.1em;
+  line-height: 1.6;
+  color: #222;
+}
+
+.slide light {
+  opacity: 0.5;
+}
+
+.slide blue {
+  color: #1e3c72;
+}
+
+  /* 画像上に重ねる透明ホットスポット */
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    /* 背景は透明で見えないがホバー判定はされる */
+    background-color: rgba(255, 255, 255, 0);
+  }
+
+  /* ポップアップ表示エリア */
+  .popup {
+    position: absolute;
+    max-width: 300px;
+    background: #f0f8ff;
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #333;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+  .popup.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+/* 親のulは背景そのまま */
+.slide ul {
+  background-color: rgba(173, 216, 230, 0.5);
+  border-radius: 12px;
+  padding: 20px 30px;
+  margin-left: 0;
+  margin-bottom: 25px;
+  list-style-position: inside;
+  box-sizing: border-box;
+}
+
+/* detailsは背景透明に */
+details {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0.2rem 0.5rem; /* 少しパディングを減らす */
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+/* open時の背景も透明 */
+details[open] {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* summaryは背景白で目立たせる */
+summary {
+  font-weight: 700;
+  font-size: 1.15rem;
+  outline: none;
+  background: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 6px;
+}
+
+summary::-webkit-details-marker {
+  display: none; /* Chrome, Edge, Safari */
+}
+summary::marker {
+  content: none; /* Firefoxなどの対応 */
+}
+
+summary::before {
+  content: "▶";
+  display: inline-block;
+  margin-right: 0.5rem;
+  transition: transform 0.3s ease;
+}
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+</style>
+</head>
+<body>
+
+<div class="slide active" id="slide1">
+  <h1><strong>NatBDI</strong> -BDI Agents in Natural Language Environments-</h1>
+  <p>ゴール：開発者がAIの専門家でなくても、効率的な自律エージェントを開発できる</p>
+  <ul>
+    <p>そのために必要なこと</p>
+    <li>エージェントが自然言語を適切に理解し人間の指示を解釈する能力</li>
+    <li>開発者がエージェントの意思決定過程を十分に把握できる能力</li>
+  </ul>
+  <p>本研究では、
+    <ul>
+      <li><strong>BDIアーキテクチャと自然言語処理技術を統合した新たなエージェントシステム「NATBDI」を提案</strong></li>
+      <li>自然言語を用いて計画を作成・実行し、ブラックボックス型AIに見られる透明性の欠如を克服</li>
+    </ul>
+  </p>
+  <p><light>Ichida, Alexandre Yukio, Felipe Meneguzzi, and Rafael C. Cardoso. BDI agents in natural language environments. AAMAS 2024, May 6–10, 2024, Auckland, New Zealand.</light></p>
+
+</div>
+
+<div class="slide" id="slide2">
+  <h1>本研究の意義とアプローチの新規性</h1>
+  <p>AIは近年、我々にとって身近な存在になってきている. だが、AIの内部はブラックボックスであり、AIの動きを理解するのは難しい</p>
+  <ul>
+    <li>人間の言葉はあいまいで多様なので、コンピューターが完全に理解するのが難しい</li>
+    <li>AIがどう考えて動くかを管理するのは大変</li>
+    <li>LLMは文章作成は得意でも、常識的判断や論理的な辻褄合わせは苦手</li>
+  </ul>
+  <p>そこでNatBDIは、以下のアプローチを提案！</p>
+  <ul>
+    <li>BDIアーキテクチャ：人間の心理モデルに基づき、エージェントの信念（Beliefs）、欲求（Desires）、意図（Intentions）を記述、自然言語を用いた計画（Plan Library）を作成し、エージェントがそれを基に意思決定を行う</li>
+    <li>自然言語推論（NLI）：エージェントが信念と計画の条件を照合。論理的に含意を推測するためにLLMを使用。計画の適用が困難な場合は、強化学習ベースのフォールバックポリシーを用いる</li>
+  </ul>
+  <div><blue><strong>BDIモデルとLLMを相補的に用いて意思決定過程を可視化. 人間が自然言語で計画を記述しエージェントがそれを実行するため開発者がエージェントの挙動を容易に制御可能！</strong></blue></div>
+</div>
+
+<div class="slide" id="slide3">
+  <h1>NatBDIアーキテクチャの概要</h1>
+  <img src="natbdi_image.png" alt="NatBDIアーキテクチャの概要" class="natbdi-image">
+
+  <!-- 画像上の説明用ホットスポット -->
+  <div class="hotspot" 
+       style="top: 30%; left: 10%; width: 15%; height: 15%;" 
+       data-desc="<strong>観察（Observation）</strong>：環境を観察し、自然言語で記述された情報を取得。『冷凍庫や温度計が見えている』といった記述が含まれる。">
+  </div>
+  <div class="hotspot" 
+       style="top: 30%; left: 28%; width: 15%; height: 15%;" 
+       data-desc="<strong>信念（Belief Base）</strong>：取得した情報を『信念』として保存。例えば『冷凍庫がある』『冷凍庫の扉は閉じている』といった形で管理される。">
+  </div>
+  <div class="hotspot" 
+       style="top: 30%; left: 37%; width: 15%; height: 15%;" 
+       data-desc="<strong>プラン選択（Plan Selection）</strong>：信念をもとに、プランライブラリの計画を適用可能か検討。自然言語推論（NLI）モデルを使用し判断。">
+  </div>
+  <div class="hotspot" 
+  style="top: 30%; left: 50%; width: 15%; height: 15%;" 
+  data-desc="<strong>プランライブラリ（Plan Library）</strong>：事前に定義されたプランが格納されている。例えば「キッチンにいて、棚が閉じているなら、棚を開けて金属ポットを取る」といった計画が存在。">
+  </div>
+  <div class="hotspot" 
+    style="top: 40%; left: 55%; width: 15%; height: 15%;" 
+    data-desc="<strong>意図（Intentions）</strong>：実行する計画のアクションを意図として確定し、エージェントがそれを実行する。">
+  </div>
+  <div class="hotspot" 
+    style="top: 57%; left: 42%; width: 15%; height: 15%;" 
+    data-desc="<strong>フォールバックポリシー（Fallback Policy）</strong>：もし計画が見つからない場合、強化学習ベースのフォールバックポリシーが適用され、事前に学習された戦略を用いて行動が決定される。">
+  </div>
+
+  <p>NATBDIアーキテクチャの概要。エージェントが自然言語環境でどのように情報を処理し、計画を選択し、意思決定を行うかを図解。</p>
+</div>
+
+<div id="popup" class="popup"></div>
+
+<script>
+  const popup = document.getElementById('popup');
+  const hotspots = document.querySelectorAll('.hotspot');
+
+  hotspots.forEach(hotspot => {
+    hotspot.addEventListener('mouseenter', e => {
+      const desc = e.target.getAttribute('data-desc');
+      popup.innerHTML = desc; // HTMLとして挿入
+      const rect = e.target.getBoundingClientRect();
+
+      const left = rect.right + 10;
+      const top = rect.top;
+
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+
+      popup.classList.add('visible');
+    });
+    hotspot.addEventListener('mouseleave', () => {
+      popup.classList.remove('visible');
+    });
+  });
+</script>
+
+<div class="slide" id="slide4">
+  <h1>Plan Selectionモジュールについて</h1>
+  <p>NatBDIは、AIの「信念」とプランの「条件」を比べるために「Natural Language Inference (NLI)」を使用</p>
+  <p>NLIは二つの文章の関係を判断し、「entailment（〇）」「contradiction（×）」「neutral（△）」を区別</p>
+  <p>NatBDIでは、「entailment」のみを「条件が満たされている」としてプランを選択</p>
+  <p>複数の文章から成る信念と条件の組み合わせを全て比較し、条件が全て満たされた場合だけプランを使う</p>
+  <img src="plan_template.png" alt="plan template">
+</div>
+
+<div class="slide" id="slide5">
+  <h1>Fallback Policy</h1>
+
+  <p>LLMは自然言語で行動候補を生成するが、強化学習モデルは自然言語を理解できない。そのため、LLMの生成した行動候補を、事前に定義された行動空間にマッピングすることで、強化学習モデルが評価できるようになっている。</p>
+
+  <details>
+    <summary>1. LLMの出力の構造化</summary>
+    <ul>
+      <li>LLMは「ストーブのスイッチを入れる」「金属の容器を選ぶ」といった自然言語の行動記述を生成。</li>
+      <li>この出力を、強化学習モデルが扱える形式（例えば、離散的なアクションリスト）に変換。</li>
+      <li>実装では、事前に定義されたアクションセットと照合し、最も意味的に近いものを選択する手法が用いられる。</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>2. 強化学習モデルの評価プロセス</summary>
+    <ul>
+      <li>DRRN（Deep Reinforcement Relevance Network）は行動の成功率や報酬を考慮して行動候補を評価する。</li>
+      <li>過去の行動履歴から得られた報酬を参照し、現在の環境状態に基づいて最適な行動を選択する。</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>3. 新規行動の評価</summary>
+    <ul>
+      <li>過去に見たことのない行動候補の評価は、近傍探索や埋め込み空間での類似性評価が鍵となる。</li>
+      <li>例えば、過去に「氷を加熱する」行動を成功させた経験があれば、「バターを溶かす」という新しい行動を、「加熱が必要な行動」として類似性を推定し、評価する。</li>
+    </ul>
+  </details>
+
+  <p>つまり、LLMの自然言語出力を適切なアクションフォーマットに変換し、強化学習モデルがその行動の成功可能性を評価することで、未知の行動でも適切な選択ができるようになっている。</p>
+</div>
+
+
+<div class="slide" id="slide6">
+  <h1>評価環境</h1>
+  <details>
+    <summary>1. ScienceWorldテキスト環境</summary>
+    <ul>
+      <p>AIの性能は「ScienceWorldテキスト環境」というインタラクティブなテキスト環境を使用</p>
+      <p>初等教育レベルの科学カリキュラムをシミュレート</p>
+      <p>エージェントの場所間の移動やオブジェクト操作に関する推論を評価</p>
+      <p>物質の状態を考慮して異なるオブジェクトを組み合わせるエージェントの理解度もテスト</p>
+    </ul>
+  </details>
+
+  <details>
+    <summary>2. 既存のLLMの限界</summary>
+    <ul>
+      <p>現在のLLMは質問応答タスクで情報検索システムとしては機能するが、科学知識に基づいて行動または計画する推論においては限界があることが示されている</p>
+      <p>ScienceWorld環境は、人間が簡単に実行できるタスク（例：氷を溶かす）を解決するために、宣言的な科学知識を使用して行動または計画するエージェントの能力を評価する</p>
+    </ul>
+  </details>
+
+  <details>
+    <summary>3. ベンチマークとタスク</summary>
+    <ul>
+      <p>環境には30のベンチマークが含まれており、物質の状態変化、測定、分類などの10のトピックに分かれている</p>
+      <p>評価には「melt」（要素を溶かす）と「find-non-living-thing」（非生物を見つけて容器に入れる）の2種類のタスクを使用</p>
+      <p>「melt」タスクは「find-non-living-thing」よりも複雑な推論を必要とし、既存手法は一般的に性能が低い</p>
+    </ul>
+  </details>
+</div>
+
+<div class="slide" id="slide7">
+  <h1>実験設定</h1>
+  <ul>
+    <li>NatBDIはPythonで実装。</li>
+    <li>プランライブラリは人間が自然言葉で作成（melt・find-non-living-thingタスク用）。</li>
+    <li>ナビゲーションプランはAIが自動で効率的なルートを計算してプラン化。</li>
+    <li>タスクの目標はBDIのメインゴールとして設定。</li>
+    <li>NLI用AIモデルは「roberta-large」中心に、「BERT」「MiniLM」と比較。</li>
+    <li>計算には高性能GPU（NVIDIA RTX 3060）を使用。</li>
+    <li>Fallback PolicyはDRRN強化学習モデルを訓練して利用。</li>
+    <li>同じFallback行動を50回以上繰り返すと失敗と判定。</li>
+  </ul>
+</div>
+
+<div class="slide" id="slide8">
+  <h1>実験結果 -NatBDIの優位性</h1>
+  <p><strong>人間が作った自然言語プランを少しでも追加すると、AIのタスク達成スコアが大幅に改善！</strong><p>
+  <ul>
+    <li>特に難しい<strong>「melt」タスク</strong>で効果が顕著で、プランが少しあるだけで大きく成績が伸びた</li>
+    <li>行動数も少なくなり効率化</li>
+  </ul>
+  <p>強化学習だけでは苦戦、特にmeltタスクはほとんどクリア不可</p>
+  <p>多くのプランを使うと成績は向上したが、満点には届かず、想定外の状況ではFallback Policyに頼る</p>
+  <p>NLIモデルの性能依存、高性能モデル（roberta-large）でより正確にプランの選択が可能に</p>
+</div>
+
+<div class="slide" id="slide9">
+  <h1>BDIモデルとLLMの相補的な働き</h1>
+  <details>
+    <summary>1. LLMがBDIエージェントをどう高度化したか</summary>
+    <ul>
+      <li>自然言語処理の強化：　BDIエージェントの計画選択にLLMを導入することで、自然言語ベースの推論が可能になった。自然言語推論（NLI）を用いた計画選択により、エージェントの計画適用範囲が拡大した。</li>
+      <li>プランライブラリの拡張：　BDIモデルではルールベースのプランしか選択できなかったが、LLMによって自然言語のプラン記述が可能となり、計画の表現力が向上。柔軟な計画変更や、人間が直接プランを記述が可能となった。</li>
+      <li>フォールバックポリシーの導入：　計画が適用できない場合、LLMを活用した強化学習ベースのフォールバックポリシーが動作するため、適切な意思決定が可能になった。</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>2. BDIがLLMをどう高度化したか</summary>
+    <ul>
+      <li>意思決定の透明性向上：　LLM単体の推論はブラックボックスになりやすい。BDIモデルの導入により、信念・欲求・意図（BDI）の枠組みで推論過程を説明できるようになった。これにより、エージェントの行動を理解しやすくなった。</li>
+      <li>計画選択の合理性向上：　BDIモデルを利用することで、LLMエージェントは従来の確率的推論だけでなく、構造化された計画選択（明示的なプラン適用ルール）に基づく行動をとれるようになった。</li>
+      <li>人間とのインタラクションの質向上：　BDIの計画構造を活用することで、エージェントが明確な目標と計画を持った状態で会話できるようになり、単なるLLMエージェントよりも対話の一貫性や合理性が向上した。</li>
+    </ul>
+  </details>
+
+  <p>BDIの導入によってLLMの推論の透明性と計画選択の安定性が向上し、LLMの導入によってBDIの自然言語推論能力と適応性が強化されたという相補関係が見られる。</p>
+</div>
+
+<div class="slide" id="slide10">
+  <h1>まとめと将来展望</h1>
+  <h2>まとめ</h2>
+  <ul>
+    <li>NatBDIはBDIモデルと自然言語処理を組み合わせた新しいAIの考え方。</li>
+    <li>AIの「心」の状態を人間が理解しやすく、自然言語をより上手く扱える。</li>
+    <li>人間が自然な言葉でプランを教え、AIの動きを細かく調整可能。</li>
+    <li>ブラックボックスではなくAIの動きが見える化された。</li>
+    <li>実験でプラン追加で成績大幅向上、特に難しいタスクで効果的。</li>
+  </ul>
+  <h2>将来展望</h2>
+  <ul>
+    <li>ScienceWorldの他のタスクや別環境Jerichoでの実験拡大。</li>
+    <li>より賢いFallback Policyの開発。</li>
+    <li>AIが自分でプランを自動学習できるようにする。</li>
+  </ul>
+</div>
+
+<div class="slide" id="slide11">
+  <h1>題材文献</h1>
+  <a href="BDI Agents in Natural Language Environments.pdf" download>BDI Agents in Natural Language Environments</a>
+</div>
+
+        <!-- ナビゲーションボタン -->
+        <div class="navigation">
+            <button class="nav-btn" id="prevBtn" disabled>前へ</button>
+            <button class="nav-btn" id="nextBtn">次へ</button>
+        </div>
+
+        <!-- スライドカウンター -->
+        <div class="slide-counter" id="slideCounter">1 / 14</div>
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const slideCounter = document.getElementById('slideCounter');
+        let currentSlide = 0;
+
+        function updateSlides() {
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+            prevBtn.disabled = currentSlide === 0;
+            nextBtn.disabled = currentSlide === slides.length - 1;
+            slideCounter.textContent = `${currentSlide + 1} / ${slides.length}`;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlides();
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlides();
+            }
+        });
+
+        updateSlides();
+    </script>
+</body>
+</html>
