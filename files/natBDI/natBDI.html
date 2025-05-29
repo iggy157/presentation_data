@@ -260,8 +260,9 @@ details[open] summary::before {
   </ul>
   <p>本研究では、
     <ul>
-      <li><strong>BDIアーキテクチャと自然言語処理技術を統合した新たなエージェントシステム「NATBDI」を提案</strong></li>
-      <li>自然言語を用いて計画を作成・実行し、ブラックボックス型AIに見られる透明性の欠如を克服</li>
+      <p><strong>BDIアーキテクチャと自然言語処理技術を統合した新たなエージェントシステム「NATBDI」を提案</strong></p>
+      <li>BDIアーキテクチャ：人間の心理モデルに基づき、エージェントの信念（Beliefs）、欲求（Desires）、意図（Intentions）を記述、自然言語を用いた計画（Plan Library）を作成し、エージェントがそれを基に意思決定を行う</li>
+      <li>自然言語推論（NLI）：エージェントが信念と計画の条件を照合。論理的に含意を推測するためにLLMを使用。計画の適用が困難な場合は、強化学習ベースのフォールバックポリシーを用いる</li>
     </ul>
   </p>
   <p><light>Ichida, Alexandre Yukio, Felipe Meneguzzi, and Rafael C. Cardoso. BDI agents in natural language environments. AAMAS 2024, May 6–10, 2024, Auckland, New Zealand.</light></p>
@@ -269,22 +270,6 @@ details[open] summary::before {
 </div>
 
 <div class="slide" id="slide2">
-  <h1>本研究の意義とアプローチの新規性</h1>
-  <p>AIは近年、我々にとって身近な存在になってきている. だが、AIの内部はブラックボックスであり、AIの動きを理解するのは難しい</p>
-  <ul>
-    <li>人間の言葉はあいまいで多様なので、コンピューターが完全に理解するのが難しい</li>
-    <li>AIがどう考えて動くかを管理するのは大変</li>
-    <li>LLMは文章作成は得意でも、常識的判断や論理的な辻褄合わせは苦手</li>
-  </ul>
-  <p>そこでNatBDIは、以下のアプローチを提案！</p>
-  <ul>
-    <li>BDIアーキテクチャ：人間の心理モデルに基づき、エージェントの信念（Beliefs）、欲求（Desires）、意図（Intentions）を記述、自然言語を用いた計画（Plan Library）を作成し、エージェントがそれを基に意思決定を行う</li>
-    <li>自然言語推論（NLI）：エージェントが信念と計画の条件を照合。論理的に含意を推測するためにLLMを使用。計画の適用が困難な場合は、強化学習ベースのフォールバックポリシーを用いる</li>
-  </ul>
-  <div><blue><strong>BDIモデルとLLMを相補的に用いて意思決定過程を可視化. 人間が自然言語で計画を記述しエージェントがそれを実行するため開発者がエージェントの挙動を容易に制御可能！</strong></blue></div>
-</div>
-
-<div class="slide" id="slide3">
   <h1>NatBDIアーキテクチャの概要</h1>
   <img src="natbdi_image.png" alt="NatBDIアーキテクチャの概要" class="natbdi-image">
 
@@ -343,7 +328,7 @@ details[open] summary::before {
   });
 </script>
 
-<div class="slide" id="slide4">
+<div class="slide" id="slide3">
   <h1>Plan Selectionモジュールについて</h1>
   <p>NatBDIは、AIの「信念」とプランの「条件」を比べるために「Natural Language Inference (NLI)」を使用</p>
   <p>NLIは二つの文章の関係を判断し、「entailment（〇）」「contradiction（×）」「neutral（△）」を区別</p>
@@ -352,7 +337,7 @@ details[open] summary::before {
   <img src="plan_template.png" alt="plan template">
 </div>
 
-<div class="slide" id="slide5">
+<div class="slide" id="slide4">
   <h1>Fallback Policy</h1>
 
   <p>LLMは自然言語で行動候補を生成するが、強化学習モデルは自然言語を理解できない。そのため、LLMの生成した行動候補を、事前に定義された行動空間にマッピングすることで、強化学習モデルが評価できるようになっている。</p>
@@ -386,7 +371,7 @@ details[open] summary::before {
 </div>
 
 
-<div class="slide" id="slide6">
+<div class="slide" id="slide5">
   <h1>評価環境</h1>
   <details>
     <summary>1. ScienceWorldテキスト環境</summary>
@@ -416,7 +401,7 @@ details[open] summary::before {
   </details>
 </div>
 
-<div class="slide" id="slide7">
+<div class="slide" id="slide6">
   <h1>実験設定</h1>
   <ul>
     <li>NatBDIはPythonで実装。</li>
@@ -430,7 +415,7 @@ details[open] summary::before {
   </ul>
 </div>
 
-<div class="slide" id="slide8">
+<div class="slide" id="slide7">
   <h1>実験結果 -NatBDIの優位性</h1>
   <p><strong>人間が作った自然言語プランを少しでも追加すると、AIのタスク達成スコアが大幅に改善！</strong><p>
   <ul>
@@ -442,7 +427,7 @@ details[open] summary::before {
   <p>NLIモデルの性能依存、高性能モデル（roberta-large）でより正確にプランの選択が可能に</p>
 </div>
 
-<div class="slide" id="slide9">
+<div class="slide" id="slide8">
   <h1>BDIモデルとLLMの相補的な働き</h1>
   <details>
     <summary>1. LLMがBDIエージェントをどう高度化したか</summary>
@@ -465,7 +450,7 @@ details[open] summary::before {
   <p>BDIの導入によってLLMの推論の透明性と計画選択の安定性が向上し、LLMの導入によってBDIの自然言語推論能力と適応性が強化されたという相補関係が見られる。</p>
 </div>
 
-<div class="slide" id="slide10">
+<div class="slide" id="slide9">
   <h1>まとめと将来展望</h1>
   <h2>まとめ</h2>
   <ul>
@@ -483,7 +468,7 @@ details[open] summary::before {
   </ul>
 </div>
 
-<div class="slide" id="slide11">
+<div class="slide" id="slide10">
   <h1>今回紹介した文献</h1>
   <a href="BDI Agents in Natural Language Environments.pdf" download>BDI Agents in Natural Language Environments</a>
 </div>
